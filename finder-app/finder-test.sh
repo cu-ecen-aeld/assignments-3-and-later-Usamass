@@ -34,6 +34,10 @@ rm -rf "${WRITEDIR}"
 assignment=$(cat "../conf/assignment.txt")
 # echo "this is -> $WRITEDIR"
 
+echo "Building the writer.c with native compilar"
+# building the writer.c utility.
+make
+
 if [ "$assignment" != 'assignment1' ]
 then
 	mkdir -p "$WRITEDIR"
@@ -54,13 +58,15 @@ fi
 
 for i in $( seq 1 "$NUMFILES")
 do
-	./writer.sh "$WRITEDIR/${username}$i.txt" "$WRITESTR"
+	./writer "$WRITEDIR/${username}$i.txt" "$WRITESTR"
 done
 
 OUTPUTSTRING=$(./finder.sh "$WRITEDIR" "$WRITESTR")
 
 # remove temporary directories
 rm -rf /tmp/aeld-data
+# cleaning the writer files
+make clean 
 
 echo "$OUTPUTSTRING"
 
