@@ -34,9 +34,6 @@ rm -rf "${WRITEDIR}"
 assignment=$(cat "../conf/assignment.txt")
 # echo "this is -> $WRITEDIR"
 
-echo "Building the writer.c with native compilar"
-# building the writer.c utility.
-make
 
 if [ "$assignment" != 'assignment1' ]
 then
@@ -65,8 +62,7 @@ OUTPUTSTRING=$(./finder.sh "$WRITEDIR" "$WRITESTR")
 
 # remove temporary directories
 rm -rf /tmp/aeld-data
-# cleaning the writer files
-make clean 
+
 
 echo "$OUTPUTSTRING"
 

@@ -9,6 +9,14 @@
 */
 bool do_system(const char *cmd)
 {
+    // printf("cmd: %s" , cmd);
+    if (system(cmd) == -1) {
+        perror("Error in calling system call\n");
+        return false;
+    }
+    return true;
+
+
 
 /*
  * TODO  add your code here
@@ -17,7 +25,6 @@ bool do_system(const char *cmd)
  *   or false() if it returned a failure
 */
 
-    return true;
 }
 
 /**
@@ -36,6 +43,7 @@ bool do_system(const char *cmd)
 
 bool do_exec(int count, ...)
 {
+    pid_t pid;
     va_list args;
     va_start(args, count);
     char * command[count+1];
@@ -47,7 +55,44 @@ bool do_exec(int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count];
+
+    pid = fork();
+
+    if ( pid == -1 ) {      // if case of error in forking
+        fprintf(stderr , "Error: %d - %s" , errno , strerror(errno));
+        return false;
+    }
+    else if ( pid > 0 ) {       // if pid is greater then 0 then it is a parent process.
+        int status;
+        printf("This is a parent process with child processID: %d\n" , pid);
+        int return_code = waitpid(pid , &status , 0);
+        if ( return_code == -1 ) {
+            fprintf(stderr , "Error: %d - %s" , errno , strerror(errno));
+            return false;
+        }
+        if (WEXITSTATUS(status) != 0) {
+            printf("The child has died with exit code: %d\n" , WEXITSTATUS(status));
+            return false;
+
+        } 
+        
+    }
+    else {      // if pid is equal to zero then it is child process.
+        
+        printf("This is a child process : %d\n" , pid);
+        if (execv(command[0] , command) == -1) {
+            // fprintf(stderr , "Error: %d - %s" , errno , strerror(errno));
+            perror("Error in execv system call\n");
+            exit(1);
+            
+        }
+                
+        
+       
+        
+    }
+    
 
 /*
  * TODO:
@@ -71,6 +116,8 @@ bool do_exec(int count, ...)
 */
 bool do_exec_redirect(const char *outputfile, int count, ...)
 {
+    
+    pid_t pid;
     va_list args;
     va_start(args, count);
     char * command[count+1];
@@ -78,11 +125,72 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     for(i=0; i<count; i++)
     {
         command[i] = va_arg(args, char *);
+        printf("command[%d] = %s\n" , i , command[i]);
     }
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    // command[count] = command[count]; 
+
+    pid = fork();
+
+
+    if ( pid == -1) {
+        fprintf(stderr , "Error: %d - %s" , errno , strerror(errno));
+        return false;
+
+
+    }
+    else if ( pid > 0 ) {       // this is parent process
+        int status;   
+       
+        printf("This is a parent process with child processID: %d\n" , pid);
+
+        int return_code = waitpid(pid , &status , 0);
+        if ( return_code == -1 ) {
+            fprintf(stderr , "Error: %d - %s" , errno , strerror(errno));
+            return false;
+        }
+        if (WEXITSTATUS(status) != 0) {
+            printf("The child has completed the task with status code: %d\n" , WEXITSTATUS(status));
+            return false;
+
+        }
+
+
+
+
+    }
+    else {      // This is child process.
+
+
+        int fd = open(outputfile , O_CREAT | O_RDWR , 00644);
+
+        if ( fd == -1 ) {
+
+            fprintf(stderr , "Error: %d - %s" , errno , strerror(errno));
+            return false;
+        } 
+
+
+        printf("This should go to the standered out\n");
+
+        if (dup2(fd , STDOUT_FILENO) == -1) {
+            perror("Error in duplicating file discriptors\n");
+            return false;
+        }
+
+        if (execv(command[0] , command) == -1) {
+            perror("Error in execv\n");
+            return false;
+        }
+
+
+        close(fd);
+
+
+    }
+
 
 
 /*
@@ -97,3 +205,13 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
 
     return true;
 }
+// #define REDIRECT_FILE "testfile.txt"
+
+// int main () 
+// {
+
+
+//     // do_system("echo this is a test > " REDIRECT_FILE );
+//     do_exec(2 , "/usr/bin/ls" , "-l");
+//     return 0;
+// }
