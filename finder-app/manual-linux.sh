@@ -21,29 +21,29 @@ else
 	echo "Using passed directory ${OUTDIR} for output"
 fi
 
-mkdir -p "${OUTDIR}"
+# mkdir -p "${OUTDIR}"
 
-cd "$OUTDIR"
-if [ ! -d "${OUTDIR}/linux-stable" ]; then
-    #Clone only if the repository does not exist.
-	echo "CLONING GIT LINUX STABLE VERSION ${KERNEL_VERSION} IN ${OUTDIR}"
-	git clone ${KERNEL_REPO} --depth 1 --single-branch --branch ${KERNEL_VERSION}
-fi
-if [ ! -e "${OUTDIR}"/linux-stable/arch/${ARCH}/boot/Image ]; then
-    cd linux-stable
-    # echo "Checking out version ${KERNEL_VERSION}"
-    # git checkout ${KERNEL_VERSION}
+# cd "$OUTDIR"
+# if [ ! -d "${OUTDIR}/linux-stable" ]; then
+#     #Clone only if the repository does not exist.
+# 	echo "CLONING GIT LINUX STABLE VERSION ${KERNEL_VERSION} IN ${OUTDIR}"
+# 	git clone ${KERNEL_REPO} --depth 1 --single-branch --branch ${KERNEL_VERSION}
+# fi
+# if [ ! -e "${OUTDIR}"/linux-stable/arch/${ARCH}/boot/Image ]; then
+#     cd linux-stable
+#     # echo "Checking out version ${KERNEL_VERSION}"
+#     # git checkout ${KERNEL_VERSION}
 
-    # TODO: Add your kernel build steps here
-    make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE mrproper # Cleaning previous build artifacts
-    make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE defconfig
-    make -j4 ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE all
-    make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE dtbs
-    make ARCH=$ARCH CROSS_COMILE=$CROSS_COMPILE modules
+#     # TODO: Add your kernel build steps here
+#     make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE mrproper # Cleaning previous build artifacts
+#     make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE defconfig
+#     make -j4 ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE all
+#     make ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE dtbs
+#     make ARCH=$ARCH CROSS_COMILE=$CROSS_COMPILE modules
 
-fi
+# fi
 
-echo "Adding the Image in outdir"
+# echo "Adding the Image in outdir"
 
 # echo "Creating the staging directory for the root filesystem"
 # cd "$OUTDIR"
