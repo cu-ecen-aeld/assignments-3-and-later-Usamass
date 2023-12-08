@@ -7,6 +7,9 @@
 #include <unistd.h>
 #include <signal.h>
 
+#define DEBUG_LOG(msg,...) syslog(LOG_DEBUG ,"SOCK_DEBUG: " msg "\n" , ##__VA_ARGS__)
+#define ERROR_LOG(msg,...) syslog(LOG_ERR ,"SOCK_ERROR: " msg "\n" , ##__VA_ARGS__)
+
 char msg[200] = "connected to the server\n";
 int sock_fd , s , conn_fd;
 
@@ -17,15 +20,24 @@ static void signal_handler()
     close(conn_fd);
     exit(EXIT_SUCCESS);
 
+}
+
+static void infinit_write(int peer_fd) 
+{
+    while (1) {
+        write(peer_fd , msg , strlen(msg));
+        sleep(1);
+    }
+
+
 
 
 }
 int main (int argc , char* argv[]) 
 {
-    // int sock_fd , s , conn_fd;
-
     /*Signal handling*/
     signal(SIGINT , signal_handler);
+
     struct addrinfo addr_info , *res;
     struct sockaddr client_info;
     memset(&addr_info , 0 , sizeof(addr_info));
@@ -35,7 +47,7 @@ int main (int argc , char* argv[])
     sock_fd = socket(AF_INET , SOCK_STREAM , 0);
 
     if (sock_fd == -1) {
-        syslog(LOG_ERR , "error ocurred while creating socket!\n");
+        ERROR_LOG("error ocurred while creating socket!\n");
         closelog();
         exit(EXIT_FAILURE);
     }
@@ -46,19 +58,13 @@ int main (int argc , char* argv[])
 
     s = getaddrinfo(NULL , "9999" , &addr_info , &res);
     if (s != 0) {
-            fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(s));
-            exit(EXIT_FAILURE);
-        }
-
-
-    if (s != 0) {
-        syslog(LOG_ERR , "error in getaddrinfo\n");
+        ERROR_LOG("error in getaddrinfo\n");
         closelog();
         exit(EXIT_FAILURE);
     }
 
     if (bind(sock_fd , res->ai_addr , res->ai_addrlen) != 0) {
-        syslog(LOG_ERR , "error in binding\n");
+        ERROR_LOG("error in binding\n");
         closelog();
         exit(EXIT_FAILURE);
 
@@ -70,11 +76,14 @@ int main (int argc , char* argv[])
     socklen_t client_len = sizeof(struct sockaddr);
 
     while (1) {
+        printf("waiting to accept connection!\n");
         conn_fd = accept(sock_fd , &client_info , &client_len);
-        write(conn_fd , msg , strlen(msg));
-        
-        close(conn_fd);
-        sleep(1);
+        printf("connection established!\n");
+        infinit_write(conn_fd);
+
+        // write(conn_fd , msg , strlen(msg));
+        // close(conn_fd);
+        // sleep(1);
 
     }
 
