@@ -17,38 +17,41 @@
 
 char msg[200] = "connected to the server\n";
 char client_ip[INET_ADDRSTRLEN] = {0};
-// char recv_buffer[MAX_BUFFER_LEN] = {0};
+char* recv_buffer = NULL;
 int sock_fd , s , conn_fd , file_fd;
 int total_data = 0;
 
 char* file_path = "/var/tmp/aesdsocketdata";
 
 
-static void signal_handler() 
+static void signal_handler(int signo) 
 {
-    printf("server shutdown!\n");
-    close(conn_fd);
-    close(file_fd);
-    // free(recv_buffer);
-    exit(EXIT_SUCCESS);
-
-}
-
-static void infinit_write(int peer_fd) 
-{
-    while (1) {
-        write(peer_fd , msg , strlen(msg));
-        sleep(1);
+    if (signo == SIGINT || signo == SIGTERM) {
+        syslog(LOG_USER , "Cought signal exiting\n");
+        if (conn_fd >= 0) close(conn_fd);
+        if (file_fd >= 0) close(file_fd);
+        free(recv_buffer);
+        remove("/var/tmp/aesdsocketdata");
+        
     }
-
-
-
+    closelog(); 
+    exit(EXIT_SUCCESS);
+    
 
 }
+
+
 int main (int argc , char* argv[]) 
 {
-    char* recv_buffer = (char*)malloc(sizeof(char) * MAX_BUFFER_LEN);
-    memset(recv_buffer , 0 , sizeof(recv_buffer));
+    
+    recv_buffer = (char*)malloc(sizeof(char) * MAX_BUFFER_LEN);
+    if (recv_buffer == NULL) {
+        ERROR_LOG("unable to allocate memory\n");
+        closelog();
+        exit(EXIT_FAILURE);
+
+    }
+    memset(recv_buffer , 0 , MAX_BUFFER_LEN);
 
     ssize_t data_size = 0;
     /*Signal handling*/
@@ -98,12 +101,15 @@ int main (int argc , char* argv[])
 
     }
     freeaddrinfo(res);
+ 
+    if (listen(sock_fd , 5) == -1) {
+        ERROR_LOG("error in listning to socket\n");
+        closelog();
+        exit(EXIT_FAILURE);
 
-    listen(sock_fd , 5);
+    }
 
     socklen_t client_len = sizeof(struct sockaddr);
-
-   
 
     while (1) {
         printf("waiting to accept connection!\n");
@@ -111,33 +117,38 @@ int main (int argc , char* argv[])
         inet_ntop(AF_INET , &(ipv4_client_addr->sin_addr) , client_ip , sizeof(client_ip));
         USER_LOG("Accepted connection from: %s" , client_ip);
      
-
+        /*receiving data from socket*/
         data_size = recv(conn_fd , recv_buffer , MAX_BUFFER_LEN , 0);
-        total_data += data_size;
 
-        write(file_fd , recv_buffer , data_size);
-
-        char* new_line = strchr(recv_buffer , '\n');
-
-        if (new_line != NULL) {
-            memset(recv_buffer , 0 , sizeof(recv_buffer));
-            lseek(file_fd , 0 , SEEK_SET);
-            read(file_fd , recv_buffer , sizeof(recv_buffer));
-            printf("buffered data: %s\n" , recv_buffer);
-            // send(conn_fd , recv_buffer , sizeof(recv_buffer) , 0);
+        if(write(file_fd , recv_buffer , data_size) == -1) {
+            printf("unable to write to the socket\n");
+            exit(EXIT_FAILURE);
         }
+
+        if (strchr(recv_buffer , '\n') != NULL) {
+            memset(recv_buffer , 0 , sizeof(char) * MAX_BUFFER_LEN);
+            off_t file_size = lseek(file_fd , 0 , SEEK_END); // getting size of file.
+            lseek(file_fd , 0 , SEEK_SET);  // pointing to beginning of the file.
+
+            int bytes_read = read(file_fd , recv_buffer , MAX_BUFFER_LEN);
+
+            while (bytes_read > 0) {
+                // printf("file_size: %ld \n bytes read: %d \n file data: %s \n cur position: %ld \n buffer size: %ld" , file_size , bytes_read , recv_buffer , lseek(file_fd , 0 , SEEK_CUR) , (sizeof(recv_buffer)* MAX_BUFFER_LEN));
+                send(file_fd , recv_buffer , bytes_read , 0);
+                bytes_read = read(file_fd , recv_buffer , MAX_BUFFER_LEN);
+                
+            }
+
+        memset(recv_buffer , 0 , sizeof(char) * MAX_BUFFER_LEN); // reset buffer for next use.
+      
+        }
+        USER_LOG("closed connection from: %s" , client_ip);
+        close(conn_fd);
         
-        printf("size: %ld \n data received: %s" , data_size , recv_buffer);
+        
 
 
     }
-
-
-
-
-
-
-
 
 
 
