@@ -1,19 +1,10 @@
-CC = gcc
-SRC = aesdsocket.c
-OBJ = aesdsocket.o
-EXEC = aesdsocket
+CC=$(CROSS_COMPILE)gcc -g -Wall -Werror
 
-ifdef CROSS_COMPILE
-	CC = $(CROSS_COMPILE)gcc
-endif
-
-all: $(EXEC)
-
-$(EXEC): $(OBJ)
-	$(CC) -o $(EXEC) $(OBJ)
-
-$(OBJ): $(SRC)
-	$(CC) -c $(SRC) -o $(OBJ)
+all: aesdsocket
 
 clean:
-	rm -f $(EXEC) $(OBJ)
+	-rm -f aesdsocket *.o
+
+*.o: *.c
+
+aesdsocket: aesdsocket.o
