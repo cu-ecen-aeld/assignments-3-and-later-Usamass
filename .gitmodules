@@ -1,3 +1,6 @@
 [submodule "assignment-autotest"]
 	path = assignment-autotest
 	url = https://github.com/cu-ecen-aeld/assignment-autotest.git
+[submodule "server/queue.h"]
+	path = server/queue.h
+	url = https://github.com/stockrt/queue.h.git
