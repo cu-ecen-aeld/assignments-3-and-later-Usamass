@@ -1,4 +1,6 @@
-CC=$(CROSS_COMPILE)gcc -g -Wall -Werror
+CC ?= gcc
+
+CFLAGS += -g -Wall -Werror
 
 all: aesdsocket
 
@@ -8,3 +10,4 @@ clean:
 *.o: *.c
 
 aesdsocket: aesdsocket.o
+	$(CC) $(CFLAGS) aesdsocket.o -o aesdsocket $(LDFLAGS)
